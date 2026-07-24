@@ -1,3 +1,12 @@
+// Vercel serverless function. Receives a POST from the client after a
+// successful Supabase insert and forwards a formatted message to Slack.
+//
+// The Slack Incoming Webhook URL is NEVER hardcoded here or committed to
+// the repo (this repo is public) — it must be set as an environment
+// variable named SLACK_WEBHOOK_URL in the Vercel project settings
+// (Settings > Environment Variables). If it's not set, this function
+// just no-ops so a submission never fails because of a missing webhook.
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' })
@@ -15,15 +24,43 @@ export default async function handler(req, res) {
   try {
     const { clientName, clientEmail } = req.body || {}
 
-    const text =
-      `📘 *Nouvelle réponse au workbook Positionnement & Voix*\n` +
-      `*Client :* ${clientName || 'Sans nom'}${clientEmail ? ` (${clientEmail})` : ''}\n` +
-      `*Voir les réponses :* ${process.env.WORKBOOK_ADMIN_URL || 'ouvre la page /?admin=1 du workbook'}`
+    const adminUrl =
+      process.env.WORKBOOK_ADMIN_URL || 'https://workbook-positionnement-voix.vercel.app/?admin=1'
+
+    // Fallback plain-text summary (shown in notifications/previews that
+    // don't render Block Kit) plus a real clickable Slack button linking
+    // straight to the admin page.
+    const fallbackText = `Nouvelle réponse au workbook Positionnement & Voix — ${
+      clientName || 'Sans nom'
+    }`
+
+    const blocks = [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text:
+            `📘 *Nouvelle réponse au workbook Positionnement & Voix*\n` +
+            `*Client :* ${clientName || 'Sans nom'}${clientEmail ? ` (${clientEmail})` : ''}`,
+        },
+      },
+      {
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: 'Voir les réponses', emoji: true },
+            url: adminUrl,
+            style: 'primary',
+          },
+        ],
+      },
+    ]
 
     const slackRes = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: fallbackText, blocks }),
     })
 
     if (!slackRes.ok) {
