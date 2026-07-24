@@ -1,6 +1,8 @@
+
 import { useState, useMemo } from 'react'
 import { sections } from './data.js'
 import { supabase } from './supabase.js'
+import { RecapContent, toMarkdown } from './recap.jsx'
 
 function fieldKey(sectionId, repIndex, fieldKey) {
   return repIndex === undefined
@@ -210,6 +212,19 @@ export default function App() {
     navigator.clipboard.writeText(JSON.stringify(payload, null, 2))
   }
 
+  const downloadMarkdown = () => {
+    const md = toMarkdown(payload, clientName)
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `workbook-${(clientName || 'positionnement-voix').trim().replace(/\s+/g, '-').toLowerCase()}.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -322,8 +337,21 @@ export default function App() {
           {section.kind === 'final' && (
             <div className="submit-area">
               {status === 'done' ? (
-                <div className="submit-success">
-                  Réponses enregistrées — merci{clientName ? `, ${clientName}` : ''}.
+                <div className="submit-success-block">
+                  <div className="submit-success">
+                    Réponses enregistrées — merci{clientName ? `, ${clientName}` : ''}.
+                  </div>
+                  <div className="download-actions">
+                    <button className="btn-secondary" onClick={() => window.print()}>
+                      Télécharger en PDF
+                    </button>
+                    <button className="btn-secondary" onClick={downloadMarkdown}>
+                      Télécharger en Markdown
+                    </button>
+                  </div>
+                  <div className="client-recap">
+                    <RecapContent answers={payload} clientName={clientName} />
+                  </div>
                 </div>
               ) : (
                 <>
