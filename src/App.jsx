@@ -193,6 +193,16 @@ export default function App() {
       setStatus('error')
     } else {
       setStatus('done')
+      // Best-effort Slack notification — never blocks or fails the submission
+      // if it errors out (e.g. webhook not configured yet).
+      fetch('/api/notify-slack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName,
+          clientEmail: answers['intro.client_email'] || '',
+        }),
+      }).catch(() => {})
     }
   }
 
