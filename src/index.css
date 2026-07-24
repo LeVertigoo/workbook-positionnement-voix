@@ -543,6 +543,37 @@ h1 {
   border-radius: 8px;
 }
 
+.submit-success-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.download-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Recap content is only ever shown when printing (see @media print below) —
+   on screen it stays hidden right after a successful submission. */
+.client-recap {
+  display: none;
+}
+
+.recap-print-title {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.recap-print-client {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
 .submit-error {
   display: flex;
   align-items: center;
@@ -763,5 +794,29 @@ h1 {
   }
   .admin-shell {
     padding: 0;
+  }
+
+  /* Client-side "download my answers as PDF" — window.print() is only ever
+     triggered from the final section's success state, so it's safe to hide
+     everything in the workbook shell except the hidden recap block. */
+  .sidebar,
+  .footer-nav {
+    display: none !important;
+  }
+  .main-content > *:not(.submit-area) {
+    display: none !important;
+  }
+  .submit-area > *:not(.submit-success-block) {
+    display: none !important;
+  }
+  .submit-success-block > *:not(.client-recap) {
+    display: none !important;
+  }
+  .client-recap {
+    display: block !important;
+  }
+  .main-content {
+    padding: 20px !important;
+    max-width: 100% !important;
   }
 }
